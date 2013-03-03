@@ -5,6 +5,15 @@ import java.util.List;
 
 public class Formatter {
 
+    public static String listArray(Object[] a) {
+        StringBuilder sb = new StringBuilder();
+
+        for (int i=0;i<a.length;i++)
+            sb.append(i).append(":").append(a[i].toString());
+
+        return sb.toString();
+    }
+
     public static String listArray(int[] a, int from, int to) {
         return listArray(a, from, to, false);
     }
