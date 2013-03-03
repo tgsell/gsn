@@ -64,6 +64,8 @@ public class VSensorConfig implements Serializable {
 
 	private String sensorMap = "false";
 
+    private String lsm = "false";
+
 	private String access_protected = "false";
 
     /**
@@ -390,11 +392,13 @@ public class VSensorConfig implements Serializable {
 					builder.append( " , " );
 				}
 			builder.append( ")" );
+
 		}
 		builder.append( "]" );
-		return "VSensorConfig{" + "name='" + this.name + '\'' + ", priority=" + this.priority + ", mainClass='" + this.mainClass + '\'' 
+		return "VSensorConfig{" + "name='" + this.name + '\'' + ", priority=" + this.priority + ", mainClass='" + this.mainClass + '\''
+                + ", publish-to-lsm=" +this.getPublishToLSM()
 		+ ", description='" + this.description + '\'' + ", outputStreamRate=" + this.outputStreamRate
-		+ ", addressing=" + this.addressing + ", outputStructure=" + this.outputStructure + ", storageHistorySize='" + this.storageHistorySize + '\'' + builder.toString( )
+		+ ", addressing=" + this.addressing + ", outputStructure=" + gsn.utils.Formatter.listArray(this.outputStructure) + ", storageHistorySize='" + this.storageHistorySize + '\'' + builder.toString( )
 		+ ", mainClassInitialParams=" + this.mainClassInitialParams + ", lastModified=" + this.lastModified + ", fileName='" + this.fileName + '\'' + ", logger=" + this.logger + ", nameInitialized="
 		+ this.nameInitialized + ", isStorageCountBased=" + this.isStorageCountBased + ", parsedStorageSize=" + this.parsedStorageSize + '}';
 	}
@@ -457,6 +461,12 @@ public class VSensorConfig implements Serializable {
 			return false;
 		return Boolean.parseBoolean(sensorMap.toString());
 	}
+
+    public boolean getPublishToLSM() {
+        if (lsm==null)
+            return false;
+        return Boolean.parseBoolean(lsm.toString());
+    }
 
 	/**
 	 * Addressing Helper methods.
