@@ -1,0 +1,12 @@
+sensorName=lausanne_1057
+author=user
+sensorType=gsn
+sourceType=lausanne
+information=Air Quality Sensors from Lausanne
+source=http://localhost:22002/gsn?REQUEST=113&name=lausanne_1057
+observation.temperature.unit=C
+observation.temperature.propertyName=Temperature
+observation.humidity.unit=Percent
+observation.humidity.propertyName=Humidity
+observation.co.unit=PPM
+observation.co.propertyName=CO
