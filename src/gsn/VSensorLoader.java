@@ -215,6 +215,11 @@ public class VSensorLoader extends Thread {
             return false;
         }
         logger.warn(new StringBuilder("adding : ").append(vs.getName()).append(" virtual sensor[").append(vs.getFileName()).append("]").toString());
+
+        if (vs.getPublishToLSM()==true) {
+            announceToLSM();
+        }
+
         if (Mappings.addVSensorInstance(pool)) {
             try {
                 fireVSensorLoading(pool.getConfig());
@@ -472,4 +477,8 @@ public class VSensorLoader extends Thread {
 			System.exit(0);
 		}
 	}
+
+    void announceToLSM() {
+        //announce sensor to LSM;
+    }
 }
