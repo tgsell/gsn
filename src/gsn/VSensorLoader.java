@@ -6,6 +6,7 @@ import gsn.beans.InputStream;
 import gsn.beans.Modifications;
 import gsn.beans.StreamSource;
 import gsn.beans.VSensorConfig;
+import gsn.metadata.LSM.Repository;
 import gsn.wrappers.AbstractWrapper;
 import gsn.wrappers.WrappersUtil;
 
@@ -217,7 +218,7 @@ public class VSensorLoader extends Thread {
         logger.warn(new StringBuilder("adding : ").append(vs.getName()).append(" virtual sensor[").append(vs.getFileName()).append("]").toString());
 
         if (vs.getPublishToLSM()==true) {
-            announceToLSM();
+            announceToLSM(vs);
         }
 
         if (Mappings.addVSensorInstance(pool)) {
@@ -478,7 +479,7 @@ public class VSensorLoader extends Thread {
 		}
 	}
 
-    void announceToLSM() {
-        //announce sensor to LSM;
+    public void announceToLSM(VSensorConfig vs) {
+        Repository.getInstance().announceSensor(vs);
     }
 }
