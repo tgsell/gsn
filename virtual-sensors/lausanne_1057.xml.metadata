@@ -4,6 +4,7 @@ sensorType=gsn
 sourceType=lausanne
 information=Air Quality Sensors from Lausanne
 source=http://localhost:22002/gsn?REQUEST=113&name=lausanne_1057
+sensorID=http://lsm.deri.ie/resource/8a82919d3264f4ac013264f4e14501c0
 observation.temperature.unit=C
 observation.temperature.propertyName=Temperature
 observation.humidity.unit=Percent
