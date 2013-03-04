@@ -40,6 +40,16 @@ public class SensorMetaData {
 
     private String source;
 
+    public String getSensorID() {
+        return sensorID;
+    }
+
+    public void setSensorID(String sensorID) {
+        this.sensorID = sensorID;
+    }
+
+    String sensorID;
+
     public String toString() {
         return "SensorMetaData{" +
                 "sensorName='" + sensorName + '\'' +
@@ -48,6 +58,7 @@ public class SensorMetaData {
                 ", information='" + information + '\'' +
                 ", sourceType='" + sourceType + '\'' +
                 ", source='" + source + '\'' +
+                ", sensorID='" + sensorID + '\'' +
                 '}';
     }
 
