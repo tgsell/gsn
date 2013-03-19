@@ -9,7 +9,7 @@ package gsn.http.ac;
 
 import com.oreilly.servlet.MultipartRequest;
 import org.apache.log4j.Logger;
-
+import org.apache.commons.io.FileUtils;
 
 import java.io.*;
 import java.util.*;
@@ -135,7 +135,15 @@ public class ParameterSet
                 file = this.multipartreq.getFile(name);
                 if(filename!=null && filetype!=null )
                 {
-                    ds = new DataSource(vsname,"4",filename,filetype,saveDirectory);
+                    String newFilePath = file.getAbsolutePath().replace(file.getName(), "") + vsname+".xml";
+                    File newFile = new File(newFilePath);
+
+                    try {
+                        FileUtils.moveFile(file, newFile);
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                    ds = new DataSource(vsname,"4",vsname+".xml",filetype,saveDirectory);
                 }
                 if (file != null)
                 {

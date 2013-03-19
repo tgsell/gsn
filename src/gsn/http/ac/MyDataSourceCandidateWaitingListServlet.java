@@ -1,12 +1,15 @@
 package gsn.http.ac;
 
+import com.oreilly.servlet.MultipartRequest;
 import gsn.Main;
 import gsn.beans.ContainerConfig;
 import gsn.http.WebConstants;
+import org.apache.commons.io.FileUtils;
 import org.apache.log4j.Logger;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.*;
+import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.sql.SQLException;
@@ -266,17 +269,42 @@ public class MyDataSourceCandidateWaitingListServlet extends HttpServlet
                 try
                 {
                     ctdb = new ConnectToDB();
+                    User owner = ctdb.getUserFromDataSource(pm.valueForName("datasourcename"));  // get the owner of this data source
+                    String message = null;
                     if(pm.valueForName("register").equals("Yes"))
                     {
+                       /* String name = pm.valueForName("datasourcename")+".xml";
+                        MultipartRequest multipartreq = new MultipartRequest(req, "virtual-sensors/receivedVSFiles", 5 * 1024 * 1024);
+                        File file = multipartreq.getFile(name);
+                        // move the VS into another directory
+                        String newFilePath = file.getAbsolutePath().replace("virtual-sensors/", "") + name;
+                        File newFile = new File(newFilePath);
+
+                        try {
+                            FileUtils.moveFile(file, newFile);
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }   */
+
                         ctdb.updateOneColumnUnderOneCondition(new Column("ISCANDIDATE","no"),new Column("DATASOURCENAME",pm.valueForName("datasourcename")),"ACDATASOURCE");
                         //send e-mail to the DS owner
+                        message = " your Virtual Sensor '"+pm.valueForName("datasourcename")+"' has been activated.";
                     }
                     else if(pm.valueForName("register").equals("No"))
                     {
                         ctdb.deleteDataSourceCandidate(pm.valueForName("datasourcename"));
                         comments=pm.valueForName("comments");
                         //send e-mail to the DS owner
+                        message = " unfortunately your Virtual Sensor '"+pm.valueForName("datasourcename")+"' will not be activated.\n"+
+                        "The reason for that is the following: "+comments;
                     }
+                    Emailer email = new Emailer();
+                    // send an email to the Owner of the Resource
+                    String msgHead = "Dear "+owner.getFirstName() +", "+"\n"+"\n";
+                    String msgTail = "Best Regards,"+"\n"+"GSN Team";
+                    String msgBody = "We would like to inform you that"+message+"\n\n";
+                    email.sendEmail( "GSN ACCESS ", "GSN USER",owner.getEmail(),"Virtual Sensor Activation", msgHead, msgBody, msgTail);
+
                 }
                 catch(Exception e)
                 {

@@ -72,8 +72,6 @@ public class ConnectToDB
         dbPassword= jdbcPassword;
         connectionname=jdbcURL;
         checkACTables();
-
-
     }
      /* Check if AC tables exist , and create them otherwise*/
      static void checkACTables()
@@ -1107,6 +1105,24 @@ public class ConnectToDB
     {
         User user=new User(userName);
         rs = this.selectAllColumnsUnderOneCondition("ACUSER",new Column("USERNAME",userName));
+        while(rs.next())
+        {
+            user.setFirstName(rs.getString("FIRSTNAME"));
+            user.setLastName(rs.getString("LASTNAME"));
+            user.setEmail(rs.getString("EMAIL"));
+        }
+        return user;
+    }
+
+    /* given datasourcename, returns an object user that owns this source */
+    User getUserFromDataSource(String datasourcename)throws SQLException
+    {
+        String query="SELECT USERNAME FROM ACUSER_ACDATASOURCE WHERE DATASOURCENAME ='"+datasourcename+"'";    // get the username for this user
+        rs = stmt.executeQuery(query);
+        rs.next();
+        User user=new User(rs.getString("USERNAME"));                                     // create what will be returned
+        query="SELECT * FROM ACUSER WHERE USERNAME ='"+rs.getString("USERNAME")+"'";      // initialize the rest of the information
+        rs = stmt.executeQuery(query);
         while(rs.next())
         {
             user.setFirstName(rs.getString("FIRSTNAME"));

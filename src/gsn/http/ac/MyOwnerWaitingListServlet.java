@@ -261,8 +261,9 @@ public class MyOwnerWaitingListServlet extends HttpServlet
 
     void handleForm(HttpServletRequest req, HttpServletResponse res)
     {
-        User temp=null;
+
         HttpSession session = req.getSession();
+        User user = (User) session.getAttribute("user"); ////////
         PrintWriter out = (PrintWriter) session.getAttribute("out");
 
         ParameterSet pm = new ParameterSet(req);
@@ -270,6 +271,7 @@ public class MyOwnerWaitingListServlet extends HttpServlet
         ConnectToDB ctdb =null;
         try
         {
+            String decision = null;   ///////////////
             ctdb= new ConnectToDB();
             if(pm.valueForName("register")==null)
             {
@@ -280,13 +282,30 @@ public class MyOwnerWaitingListServlet extends HttpServlet
             {
 
                 ctdb.updateOwnerDecision("has accepted the registration",pm.valueForName("username"), pm.valueForName("datasourcename") );
+                decision = "has been accepted by its owner.\n";  ////////////////
             }
 
             else if(pm.valueForName("register").equals("No"))
             {
                 ctdb.updateOwnerDecision("has refused the registration",pm.valueForName("username"), pm.valueForName("datasourcename") );
-
+                decision = "has been refused by its owner.\n"; ///////////////
             }
+            ctdb = new ConnectToDB();
+            Emailer email = new Emailer();
+            User userFromBD = ctdb.getUserForUserName("Admin"); // get the details for the Admin account
+            String msgHead = "Dear "+userFromBD.getFirstName() +", "+"\n"+"\n";
+            String msgTail = "Best Regards,"+"\n"+"GSN Team";
+            String msgBody = "A request for a Virtual Sensor " + decision
+                    +"The Virtual Sensor is: " + pm.valueForName("datasourcename")+
+                    "\nThe details of its owner are as follows: \n" +
+                    "First name: " + user.getFirstName() + "\n"+
+                    "Last name: " + user.getLastName() + "\n"+
+                    "Email address: " + user.getEmail() + "\n\n"+
+                    "You can manage this change by choosing the following options in GSN:\n"+
+                    "Access Rights Management -> Admin Only -> Users Updates Waiting List\n"+
+                    "or via the URL:{sitename}/gsn/MyUserUpdateWaitingListServlet\n\n";
+            // first change Emailer class params to use sendEmail
+            email.sendEmail( "GSN ACCESS ", "GSN USER",userFromBD.getEmail(),"Update for a Virtual Sensor access", msgHead, msgBody, msgTail);
         }
         catch(Exception e)
         {
