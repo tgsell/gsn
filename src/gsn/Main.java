@@ -80,7 +80,7 @@ import org.eclipse.jetty.server.AbstractConnector;
  * Microsoft SensorMap: http://localhost:22001/services/Service?wsdl
  * GSN: http://localhost:22001/services/GSNWebService?wsdl
  */
-public final class Main {
+public final class Main {               //
 
 	private static Main singleton ;
 
