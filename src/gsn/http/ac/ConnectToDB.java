@@ -1505,5 +1505,6 @@ public class ConnectToDB
                 email.sendEmail( "GSN ACCESS ", "GSN USER",userFromBD.getEmail(),"Update for a Virtual Sensor access", msgHead, msgBody, msgTail);
             }
         }
+
     }
 }
