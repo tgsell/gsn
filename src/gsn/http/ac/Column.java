@@ -12,7 +12,7 @@ package gsn.http.ac;
 This class defines a column of a DB table:
  */
     
-public class Column      // Class
+public class Column
 {
     protected String columnLabel;//name of the column
     protected String columnValue; // value of the column

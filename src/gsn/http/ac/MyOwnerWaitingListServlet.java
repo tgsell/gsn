@@ -197,6 +197,7 @@ public class MyOwnerWaitingListServlet extends HttpServlet
         String datasourcename= user.getDataSource().getDataSourceName();
         out.println("<FORM METHOD=POST>");
         out.println("Time limitation: <INPUT TYPE=\"date\" name=\"deadline\">");
+        out.println("<INPUT TYPE=\"checkbox\" name=\"unlimited\" >Unlimited Access");
         out.println("<INPUT TYPE=HIDDEN NAME=username VALUE="+username+">");
         out.println("<INPUT TYPE=HIDDEN NAME=datasourcename VALUE="+datasourcename+">");
         //out.println("<INPUT TYPE=HIDDEN NAME=register VALUE= Yes>");
@@ -287,11 +288,15 @@ public class MyOwnerWaitingListServlet extends HttpServlet
 
             else if(pm.valueForName("register").equals("Yes"))
             {
-                if (pm.valueForName("deadline").length() < 2) {     // The user should have defined a limitation date
+                //pm.valueForName("unlimited")
+                           // if the user has not specified a date and not unlimited access is set
+                if (( pm.valueForName("unlimited") == null) && pm.valueForName("deadline").length() < 2) {     // The user should have defined a limitation date
                     this.manageUserAlert(out, "Please, specify the Time limitations!");    // print an error message
 
                 } else {
-                    ctdb.insertThreeColumnsValuesStrings(pm.valueForName("username"), pm.valueForName("datasourcename"), pm.valueForName("deadline"), "ACACCESS_DURATION");
+                    if ( pm.valueForName("unlimited") == null) {   // if the user has provided a time limitation
+                        ctdb.insertThreeColumnsValuesStrings(pm.valueForName("username"), pm.valueForName("datasourcename"), pm.valueForName("deadline"), "ACACCESS_DURATION");
+                    }
                     ctdb.updateOwnerDecision("has accepted the registration",pm.valueForName("username"), pm.valueForName("datasourcename") );
                     decision = "has been accepted by its owner.\n";  ////////////////
                 }

@@ -100,14 +100,17 @@ public class MyUpdateUserDataSourceServlet  extends HttpServlet
                        if(pm.valueForName("datasourcetype").charAt(0)=='5')
                        {
                            userMessage="Unfortunately, your request to have '"+ label +"' access rights to the Virtual Sensor '"+ pm.valueForName("datasourcename") +"' has been rejected.";
-                           //logger.warn(userMessage);
+                           Column column1 = new Column("USERNAME", waitingUser.getUserName());
+                           Column column2 = new Column("DATASOURCENAME", pm.valueForName("datasourcename"));
+                           ctdb.deleteUnderTwoConditions(column1, column2,"ACACCESS_DURATION"); // remove this from the Duration Table
                            ctdb.deleteDataSourceForUser(new DataSource(pm.valueForName("datasourcename")), waitingUser);
                        }
                        else
                        {
                            userMessage="Unfortunately, your request for changing access rights to the Virtual Sensor '"+ pm.valueForName("datasourcename") +"' has been rejected.";
-                            //updatedType=pm.valueForName("datasourcetype").substring(1,2);
-                           //logger.warn(userMessage);
+                           Column column1 = new Column("USERNAME", waitingUser.getUserName());
+                           Column column2 = new Column("DATASOURCENAME", pm.valueForName("datasourcename"));
+                           ctdb.deleteUnderTwoConditions(column1, column2,"ACACCESS_DURATION"); // remove this from the Duration Table
                            waitingUser.setIsWaiting("no");
                            ctdb.updateDataSourceForUser(waitingUser,new DataSource(pm.valueForName("datasourcename"),pm.valueForName("datasourcetype").substring(0,1)));
                            ctdb.updateOwnerDecision("notreceived",pm.valueForName("username"), pm.valueForName("datasourcename") );
