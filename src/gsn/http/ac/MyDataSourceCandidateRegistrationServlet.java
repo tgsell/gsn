@@ -187,7 +187,6 @@ public class MyDataSourceCandidateRegistrationServlet extends HttpServlet
                     DataSource ds = pm.fileUploader((pm.valueForName("vsname")).toLowerCase(),"virtual-sensors/receivedVSFiles");
                     if( ds !=null)
                     {
-
                         ds.setIsCandidate("yes");
                         user.setIsWaiting("no");
                         ds.setOwner(user);
@@ -209,8 +208,6 @@ public class MyDataSourceCandidateRegistrationServlet extends HttpServlet
                                 "or via the URL: "+req.getServerName()+":"+req.getServerPort()+"/gsn/MyDataSourceCandidateWaitingListServlet\n\n";
                         // first change Emailer class params to use sendEmail
                         email.sendEmail( "GSN ACCESS ", "GSN USER",userFromBD.getEmail(),"New Virtual Sensor is Uploaded", msgHead, msgBody, msgTail);
-
-
                         this.managaeUserAlert(out, "File upload was successful.",false );
                     }
                      else
