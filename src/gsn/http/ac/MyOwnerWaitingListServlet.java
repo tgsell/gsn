@@ -198,6 +198,7 @@ public class MyOwnerWaitingListServlet extends HttpServlet
         out.println("<FORM METHOD=POST>");
         out.println("Time limitation (Month/Day/Year): <INPUT TYPE=\"date\" name=\"deadline\">");
         out.println("<INPUT TYPE=\"checkbox\" name=\"unlimited\" >Unlimited Access");
+        out.println("<p>For Mozilla, please specify: Year/Month/Day</p>");
         out.println("<INPUT TYPE=HIDDEN NAME=username VALUE="+username+">");
         out.println("<INPUT TYPE=HIDDEN NAME=datasourcename VALUE="+datasourcename+">");
         //out.println("<INPUT TYPE=HIDDEN NAME=register VALUE= Yes>");
@@ -410,3 +411,4 @@ public class MyOwnerWaitingListServlet extends HttpServlet
 
 
 }
+
