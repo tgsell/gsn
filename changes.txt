@@ -1,6 +1,9 @@
 GSN Change logs
 ---------------
 
+x-gsn
+Created x-gsn, extended version for OpenIoT
+
 r1.1.2
 New sensorscope listener server fixing problem of missing data
 Added count-based checkpoints to the CSV wrapper, logging line counts instead of latest timestamp
