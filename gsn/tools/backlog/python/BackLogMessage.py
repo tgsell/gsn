@@ -76,6 +76,12 @@ GPSPlugin = 60,
 # GPSNAVPlugin
 GPSPluginNAV = 61,
 
+# The NMEA message type.
+NMEAPlugin = 65,
+
+# The ublox message type.
+UbloxPlugin = 68,
+
 #Power Manager
 PowerManagerPlugin = 70,
 

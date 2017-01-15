@@ -219,6 +219,10 @@ class BackLogMainClass(Thread, Statistics):
                 plugin = pluginclass(self, config_plugins_options)
                 
                 # update message type to plugin dict
+                try:
+                    plugin.getMsgType()
+                except Exception, e:
+                    raise Exception('message type (%s) not defined' % (e,))
                 plugs = self._msgtypetoplugin.get(plugin.getMsgType())
                 if plugs == None:
                     self._msgtypetoplugin[plugin.getMsgType()] = [plugin]
@@ -410,7 +414,7 @@ class BackLogMainClass(Thread, Statistics):
                     break
             
         self._logger.info('%s deregistered as TOS listener' % (listener.__class__.__name__,))
-        if not self._tosListeners:
+        if not self._tosListeners and self._tospeer:
             self._logger.info('no more TOS listeners around -> stop TOSPeer')
             self._tosPeerLock.acquire()
             try:
@@ -801,9 +805,13 @@ def main():
         if backlog.shutdown:
             print 'shutdown now'
             subprocess.Popen(['shutdown', '-h', 'now'])
-        elif backlog.powerControl and not backlog.powerControl.getWlanStatus():
-            print 'turn wlan on'
-            backlog.powerControl.wlanOn()
+        elif backlog.powerControl:
+            try:
+                if not backlog.powerControl.getWlanStatus():
+                    print 'turn wlan on'
+                    backlog.powerControl.wlanOn()
+            except Exception, e:
+                return
             
 
 

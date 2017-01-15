@@ -104,10 +104,16 @@ class PowerControlClass(Thread):
         else:
             self._logger.info('unknown platform -> not initializing AD77x8')
         
-        self._backlogMain.registerTOSListener(self, [TOSTypes.AM_BEACONCOMMAND])
+        try:
+            self._backlogMain.registerTOSListener(self, [TOSTypes.AM_BEACONCOMMAND])
+        except Exception, e:
+            self._logger.warning(str(e))
         
         self._work = Event()
-        self._wlanToBeState = self.getWlanStatus()
+        try:
+            self._wlanToBeState = self.getWlanStatus()
+        except Exception, e:
+            self._logger.warning(str(e))
         self._serviceWindowEvent = Event()
         now = datetime.utcnow()
         start, end = self._backlogMain.getNextServiceWindowRange()
@@ -510,7 +516,10 @@ class PowerControlClass(Thread):
         
     def stop(self):
         self._logger.info('stopping...')
-        self._backlogMain.deregisterTOSListener(self)
+        try:
+            self._backlogMain.deregisterTOSListener(self)
+        except Exception, e:
+            self._logger.warning(str(e))
         self._serviceWindowEvent.set()
         if self._timer:
             self._timer.cancel()
