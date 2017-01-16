@@ -44,7 +44,7 @@ class UbloxPluginClass(AbstractPluginClass):
             
         dev_primary_baudrate = self.getOptionValue('dev_primary_baudrate')
             
-        self._ubloxCommPrimary = UbloxComm(self, dev_primary, dev_primary_baudrate, 0)
+        self._ubloxCommPrimary = UbloxComm(self, dev_primary, dev_primary_baudrate, False)
         
         dev_dispatch = self.getOptionValue('dev_dispatch')
         self._ubloxDispatcher = None
@@ -59,7 +59,7 @@ class UbloxPluginClass(AbstractPluginClass):
         if dev_relay:
             self.info('forwarding data from %s to primary device' % (dev_relay,))
             dev_relay_baudrate = self.getOptionValue('dev_relay_baudrate')
-            self._ubloxCommRelay = UbloxComm(self, dev_relay, dev_relay_baudrate, 0)
+            self._ubloxCommRelay = UbloxComm(self, dev_relay, dev_relay_baudrate, False)
         
         self._plugstop = False
         
@@ -68,40 +68,41 @@ class UbloxPluginClass(AbstractPluginClass):
         self.name = 'UbloxPlugin-Thread'
         self.info('started')
         
-        buff = StringIO.StringIO(2048)
-        ignore_eof = True
-        
         while not self._plugstop:
             msg = UBloxMessage()
             while not self._plugstop:
                 try:
                     n = msg.needed_bytes()
-                    b = self._ubloxCommPrimary.read(n)
-                    if not b:
-                        if ignore_eof:
-                            time.sleep(0.01)
-                            continue
+                    b = None
+                    try:
+                        b = self._ubloxCommPrimary.read(n)
+                    except socket.error, e:
                         break
+                    if not b:
+                        break
+                    if self._ubloxDispatcher:
+                        self._ubloxDispatcher.broadcast(b)
                     msg.add(b)
                     if msg.valid():
-    #                     self.info(msg)
-                        if self._ubloxDispatcher:
-                            self._ubloxDispatcher.broadcast(str(msg))
+                        self.info(msg)
                         break
                 except Exception, e:
                     self.exception(e)
             
-            while not self._plugstop:
-                try:
-                    if self._ubloxCommRelay:
-                        b = self._ubloxCommRelay.read(4096)
+            if self._ubloxCommRelay:
+                while not self._plugstop:
+                    try:
+                        try:
+                            b = self._ubloxCommRelay.read(4096)
+                        except socket.error, e:
+                            break
                         if not b:
                             break
                         self._ubloxCommPrimary.write(b)
-                except Exception, e:
-                    self.exception(e)
+                    except Exception, e:
+                        self.exception(e)
             
-            time.sleep(0.01)
+            time.sleep(0.001)
         
     
     def stop(self):
@@ -139,7 +140,7 @@ class UbloxComm(Thread):
     _read_only
     '''
     
-    def __init__(self, parent, serial_device, baudrate=None, blocking=1):
+    def __init__(self, parent, serial_device, baudrate=None, blocking=True):
         Thread.__init__(self, name='%s-Thread' % (self.__class__.__name__,))
         self._logger = logging.getLogger(self.__class__.__name__)
         self._sendqueue = Queue.Queue(SEND_QUEUE_SIZE)
@@ -149,14 +150,20 @@ class UbloxComm(Thread):
         self._ubloxCommLock = Lock()
         self._use_sendrecv = False
         self._read_only = False
-        timeout = 60
+        if blocking:
+            timeout = 60
+        else:
+            timeout = 0
 
         if serial_device.startswith("tcp:"):
             a = serial_device.split(':')
             destination_addr = (a[1], int(a[2]))
             self._dev = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             self._dev.connect(destination_addr)
-            self._dev.setblocking(blocking)
+            if blocking:
+                self._dev.setblocking(1)
+            else:
+                self._dev.setblocking(0)
             self._dev.setsockopt(socket.SOL_TCP, socket.TCP_NODELAY, 1)            
             self._use_sendrecv = True
         elif os.path.isfile(serial_device):
