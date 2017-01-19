@@ -660,6 +660,10 @@ class UBloxMessage:
         '''check if a message is valid'''
         return len(self._buf) >= 8 and self.needed_bytes() == 0 and self.valid_checksum()
 
+    def rawMsg(self):
+        '''return raw ubx message'''
+        return self._buf
+
 
 class UBlox:
     '''main UBlox control class.

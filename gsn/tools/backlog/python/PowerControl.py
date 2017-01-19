@@ -110,6 +110,7 @@ class PowerControlClass(Thread):
             self._logger.warning(str(e))
         
         self._work = Event()
+        self._wlanToBeState = None
         try:
             self._wlanToBeState = self.getWlanStatus()
         except Exception, e:
@@ -545,27 +546,28 @@ class PowerControlClass(Thread):
         
         
     def _serviceWindowTimer(self, waitSeconds):
-        self._servicewindow = True
-        self._wlanStateAfterServiceWindow = self._wlanToBeState
-        try:
-            self._wlanToBeState = True
-            if not self.getWlanStatus():
-                self._logger.info('service window starts now and lasts for %s seconds' % (waitSeconds,))
-                self._setExtStatus(self._wlanPort, True)
-            self._work.set()
-        except Exception, e:
-            self._backlogMain.incrementExceptionCounter()
-            self._logger.exception('could not turn on wlan even though we are in service window: %s' % (e,))
-        self._serviceWindowEvent.wait(waitSeconds)
-        if not self._stopped:
-            start, end = self._backlogMain.getNextServiceWindowRange()
-            now = datetime.utcnow()
-            self._timer = Timer(self._totalSeconds(start-now),self._serviceWindowTimer,[self._totalSeconds(end-start)+1])
-            self._timer.start()
-            self._servicewindow = False
-            if not self._wlanStateAfterServiceWindow:
-                self._logger.info('service window is finish')
-                self.wlanOff()
+        if self._platform is not None:
+            self._servicewindow = True
+            self._wlanStateAfterServiceWindow = self._wlanToBeState
+            try:
+                self._wlanToBeState = True
+                if not self.getWlanStatus():
+                    self._logger.info('service window starts now and lasts for %s seconds' % (waitSeconds,))
+                    self._setExtStatus(self._wlanPort, True)
+                self._work.set()
+            except Exception, e:
+                self._backlogMain.incrementExceptionCounter()
+                self._logger.exception('could not turn on wlan even though we are in service window: %s' % (e,))
+            self._serviceWindowEvent.wait(waitSeconds)
+            if not self._stopped:
+                start, end = self._backlogMain.getNextServiceWindowRange()
+                now = datetime.utcnow()
+                self._timer = Timer(self._totalSeconds(start-now),self._serviceWindowTimer,[self._totalSeconds(end-start)+1])
+                self._timer.start()
+                self._servicewindow = False
+                if not self._wlanStateAfterServiceWindow:
+                    self._logger.info('service window is finish')
+                    self.wlanOff()
     
     
     def _totalSeconds(self, td):
