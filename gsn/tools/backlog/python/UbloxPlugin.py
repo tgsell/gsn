@@ -180,11 +180,15 @@ class UbloxPluginClass(AbstractPluginClass):
             time.sleep(0.01)
             try:
                 try:
-                    b = b + self._ubloxCommPrimary.read(PRIMARY_READ_BYTES)
+                    a = self._ubloxCommPrimary.read(PRIMARY_READ_BYTES)
+                    b = b + a
                 except socket.error, e:
                     pass
             except Exception, e:
                 self.exception(e)
+                
+            if a and self._ubloxDispatcher and not self._dispatchOnlyRtcm3:
+                self._ubloxDispatcher.broadcast(a)
                 
             while b and not self._plugstop:
                 try:
@@ -195,9 +199,6 @@ class UbloxPluginClass(AbstractPluginClass):
                             break
                         else:
                             b = b[1:]
-                            
-                    if b and self._ubloxDispatcher and not self._dispatchOnlyRtcm3:
-                        self._ubloxDispatcher.broadcast(b)
                     
                     (b, msg) = processRaw(self, msgType, b)
                     if msg:
@@ -551,23 +552,24 @@ class UbloxRelay(Thread):
                     continue
                 if not b:
                     continue
-                
-                msgType = None
-                for _ in xrange(len(b)):
-                    msgType = messageType(b)
-                    if msgType is not None:
-                        break
-                    else:
-                        b = b[1:]
-                        
-                if b:
-                    if not self._relayOnlyRtcm3:
-                        self._deviceTo.write(b)
-                        b = bytes()
-                    else:
-                        (b, msg) = processRaw(self, msgType, b)
-                        if msg and msgType == MSG_TYPE_RTCM3:
-                                self._deviceTo.write(msg)
+                      
+                if not self._relayOnlyRtcm3:
+                    self._deviceTo.write(b)
+                    b = bytes()
+                else:
+                    while b and not self._plugstop:
+                        msgType = None
+                        for _ in xrange(len(b)):
+                            msgType = messageType(b)
+                            if msgType is not None:
+                                break
+                            else:
+                                b = b[1:]
+                                  
+                        if b:
+                            (b, msg) = processRaw(self, msgType, b)
+                            if msg and msgType == MSG_TYPE_RTCM3:
+                                    self._deviceTo.write(msg)
             except Exception, e:
                 self._ubloxPlugin.exception(e)
  
