@@ -42,62 +42,43 @@ MSG_TYPE_UBX   = 1
 MSG_TYPE_NMEA  = 2
 MSG_TYPE_RTCM3 = 3
 
+NMEA_PREAMBLE = b"$"
 
-def messageType(b):
-    if ord(b[0]) == ublox.PREAMBLE1:
-        return MSG_TYPE_UBX
-    elif b[0] == b"$":
-        return MSG_TYPE_NMEA
-    elif ord(b[0]) == RTCM3.RTCM3_Preamble:
-        return MSG_TYPE_RTCM3
-    else:
-        return None
-        
-        
-def processRaw(ubloxPlugin, msgType, b):
-    msg = None
-    try:
-        if msgType == MSG_TYPE_UBX:
+
+def messageReady(logger, b):
+    for _ in xrange(len(b)):
+        if ord(b[0]) == ublox.PREAMBLE1:
             if len(b) >= 2 and ord(b[1]) != ublox.PREAMBLE2:
-                ubx = False
-                b = b[1:]
+                return (None, None, b[1:])
             if len(b) >= 6:
                 l = struct.unpack('<H', b[4:6])[0]+8
                 if len(b) >= l:
-                    ubloxMsg = ublox.UBloxMessage()
-                    ubloxMsg.add(b[:l])
-                    if ubloxMsg.valid():
-                        msg = ubloxMsg
-                    b = b[l:]
-        elif msgType == MSG_TYPE_NMEA:
-            nmea = False
-            lines = b.splitlines(True)
-            if len(lines) >= 1:
-                if lines[0][0] == b"$":
-                    try:
-                        msg = pynmea2.parse(lines[0])
-                    except Exception, e:
-                        ubloxPlugin.error(e)
-                    finally:
-                        b = b[len(lines[0]):]
+                    return (MSG_TYPE_UBX, b[:l], b[l:])
                 else:
-                    b = b[len(lines[0]):]
-                    ubloxPlugin.error("very strange, line should start with $")
-        elif msgType == MSG_TYPE_RTCM3:
-            #TODO: implement
-            l = struct.unpack('>H',b[1:3])[0]+6
-            if l > 1023:
-                ubloxPlugin.error('RTCM3 message too long')
-                b = bytes()
-            elif l <= len(b):
-                msg = b[:l]
-                b = b[l:]
+                    return (None, None, b)
+            else:
+                return (None, None, b)
+        elif b[0] == NMEA_PREAMBLE:
+            s = b.split('\r\n', 1)
+            if len(s) > 1:
+                return (MSG_TYPE_NMEA,s[0]+bytes('\r\n'),s[1])
+            else:
+                return (None,None,b)
+        elif ord(b[0]) == RTCM3.RTCM3_Preamble:
+            if len(b) >= 3:
+                l = (struct.unpack('>H',b[1:3])[0]&0x3FF)+6
+                if l > 1023:
+                    logger.error('RTCM3 message too long')
+                    return (None, None, b[1:])
+                elif l <= len(b):
+                    return (MSG_TYPE_RTCM3, b[:l], b[l:])
+                else:
+                    return (None, None, b)
+            else:
+                return (None, None, b)
         else:
-            ubloxPlugin.warning('message type unknown')
-            b = bytes()
-    except Exception, e:
-        ubloxPlugin.error(e)
-    return (b, msg)
+            b = b[1:]
+    return (None, None, bytes())
 
 
 class UbloxPluginClass(AbstractPluginClass):
@@ -181,40 +162,41 @@ class UbloxPluginClass(AbstractPluginClass):
             try:
                 try:
                     a = self._ubloxCommPrimary.read(PRIMARY_READ_BYTES)
-                    b = b + a
                 except socket.error, e:
                     pass
             except Exception, e:
                 self.exception(e)
                 
-            if a and self._ubloxDispatcher and not self._dispatchOnlyRtcm3:
-                self._ubloxDispatcher.broadcast(a)
+            if not a:
+                continue
                 
-            while b and not self._plugstop:
+            if self._ubloxDispatcher and not self._dispatchOnlyRtcm3:
+                self._ubloxDispatcher.broadcast(a)
+            
+            b = b + a
+            type = True
+            
+            while type and not self._plugstop:
                 try:
-                    msgType = None
-                    for _ in xrange(len(b)):
-                        msgType = messageType(b)
-                        if msgType is not None:
-                            break
-                        else:
-                            b = b[1:]
+                    (type, msg, b) = messageReady(self, b)
                     
-                    (b, msg) = processRaw(self, msgType, b)
-                    if msg:
-                        if msgType == MSG_TYPE_UBX:
-#                             self.info('UBX: %s' % (msg,))
-                            self._ubxFile.write('%s\r\n' % (msg.rawMsg(),))
-                        elif msgType == MSG_TYPE_NMEA:
-#                             self.info('NMEA: %s' % (msg,))
-                            self._nmeaFile.write('%s\r\n' % (msg,))
-                        elif msgType == MSG_TYPE_RTCM3:
-#                             self.info('RTCM3: %s' % (msg,))
-                            if self._ubloxDispatcher and self._dispatchOnlyRtcm3:
-                                self._ubloxDispatcher.broadcast(b)  
-                            self._rtcm3File.write('%s\r\n' % (msg,))
-                    if msg is None:
-                        break
+                    if type == MSG_TYPE_UBX:
+#                         ubloxMsg = ublox.UBloxMessage()
+#                         ubloxMsg.add(msg)
+#                         if ubloxMsg.valid():
+#                             self.info('UBX: %s' % (ubloxMsg,))
+                        self._ubxFile.write('%s\r\n' % (msg,))
+                        self._ubxFile.flush()
+                    elif type == MSG_TYPE_NMEA:
+#                        self.info('NMEA: %s' % (msg,))
+                        self._nmeaFile.write(msg)
+                        self._nmeaFile.flush()
+                    elif type == MSG_TYPE_RTCM3:
+#                        self.info('RTCM3: %s' % (msg,))
+                        if self._ubloxDispatcher and self._dispatchOnlyRtcm3:
+                            self._ubloxDispatcher.broadcast(msg)
+                        self._rtcm3File.write('%s\r\n' % (msg,))
+                        self._rtcm3File.flush()
                 except Exception, e:
                     self.exception(e)
             
@@ -547,29 +529,22 @@ class UbloxRelay(Thread):
             time.sleep(0.01)
             try:
                 try:
-                    b = b + self._deviceFrom.read(RELAY_READ_BYTES)
+                    a = self._deviceFrom.read(RELAY_READ_BYTES)
                 except socket.error, e:
                     continue
-                if not b:
+                if not a:
                     continue
+                b = b + a
+                type = True
                       
                 if not self._relayOnlyRtcm3:
                     self._deviceTo.write(b)
                     b = bytes()
                 else:
-                    while b and not self._plugstop:
-                        msgType = None
-                        for _ in xrange(len(b)):
-                            msgType = messageType(b)
-                            if msgType is not None:
-                                break
-                            else:
-                                b = b[1:]
-                                  
-                        if b:
-                            (b, msg) = processRaw(self, msgType, b)
-                            if msg and msgType == MSG_TYPE_RTCM3:
-                                    self._deviceTo.write(msg)
+                    while type and not self._ubloxRelayStop:
+                        (type, msg, b) = messageReady(self._logger, b)
+                        if type is MSG_TYPE_RTCM3:
+                            self._deviceTo.write(msg)
             except Exception, e:
                 self._ubloxPlugin.exception(e)
  
